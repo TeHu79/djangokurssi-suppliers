@@ -1,25 +1,54 @@
 from django.shortcuts import render, redirect
 from .models import Supplier, Product
+from django.contrib.auth import authenticate, login, logout
 
+#LANDING AFTER LOGIN (päivä 3 harjoitusten jälkeen ei enää tarvita)
+'''
 def landingview(request):
     return render(request, 'landingpage.html')
+'''
+#LOGIN AND LOGOUT
+def loginview(request):
+    return render (request, "loginpage.html")
+
+def login_action(request):
+    user = request.POST['username']
+    passw = request.POST['password']
+    user = authenticate(username = user, password = passw)
+    if user:
+        login(request, user)
+        context = {'name': user.first_name}
+        return render(request,'landingpage.html',context)
+    else:
+        return render(request, 'loginerror.html')
+
+def logout_action(request):
+    logout(request)
+    return render(request, 'loginpage.html')
+
 
 # Product view´s
 def productlistview(request):
-    productlist = Product.objects.all()
-    supplierlist = Supplier.objects.all()
-    context = {'products': productlist, 'suppliers': supplierlist}
-    return render (request,"productlist.html",context)
+    if not request.user.is_authenticated:
+         return render(request, 'loginpage.html')
+    else:
+        productlist = Product.objects.all()
+        supplierlist = Supplier.objects.all()
+        context = {'products': productlist, 'suppliers': supplierlist}
+        return render (request,"productlist.html",context)
 
 def addproduct(request):
-    a = request.POST['productname']
-    b = request.POST['packagesize']
-    c = request.POST['unitprice']
-    d = request.POST['unitsinstock']
-    e = request.POST['supplier']
-    
-    Product(productname = a, packagesize = b, unitprice = c, unitsinstock = d, supplier = Supplier.objects.get(id = e)).save()
-    return redirect(request.META['HTTP_REFERER'])
+    if not request.user.is_authenticated:
+         return render(request, 'loginpage.html')
+    else:
+        a = request.POST['productname']
+        b = request.POST['packagesize']
+        c = request.POST['unitprice']
+        d = request.POST['unitsinstock']
+        e = request.POST['supplier']
+        
+        Product(productname = a, packagesize = b, unitprice = c, unitsinstock = d, supplier = Supplier.objects.get(id = e)).save()
+        return redirect(request.META['HTTP_REFERER'])
 
 def confirmdeleteproduct(request, id):
     product = Product.objects.get(id = id)
